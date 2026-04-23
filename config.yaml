@@ -52,7 +52,7 @@ repos:
     buildah-container:
         enabled: false
     caching:
-        enabled: false
+        enabled: true
     capo:
         enabled: false
     ci-terraform-runner:
@@ -118,7 +118,7 @@ repos:
     konflux-casc:
         enabled: false
     konflux-ci:
-        enabled: false
+        enabled: true
     konflux-ci.github.io:
         enabled: false
     konflux-clamav:
