@@ -1,0 +1,295 @@
+# fullsend organization configuration
+# https://github.com/fullsend-ai/fullsend
+#
+# This file is managed by fullsend. Manual edits may be overwritten.
+version: "1"
+dispatch:
+    platform: github-actions
+inference:
+    provider: vertex
+defaults:
+    roles:
+        - fullsend
+        - triage
+        - coder
+        - review
+    max_implementation_retries: 2
+    auto_merge: false
+agents:
+    - role: fullsend
+      name: konflux-ci-fullsend
+      slug: konflux-ci-fullsend
+    - role: triage
+      name: konflux-ci-triage
+      slug: konflux-ci-triage
+    - role: coder
+      name: konflux-ci-coder
+      slug: konflux-ci-coder
+    - role: review
+      name: konflux-ci-review
+      slug: konflux-ci-review
+repos:
+    .github:
+        enabled: false
+    application-api:
+        enabled: false
+    architecture:
+        enabled: false
+    bazel-builder:
+        enabled: false
+    brand-assets:
+        enabled: false
+    build-definitions:
+        enabled: false
+    build-pipeline-tasks:
+        enabled: false
+    build-service:
+        enabled: false
+    build-tasks-dockerfiles:
+        enabled: false
+    build-trusted-artifacts:
+        enabled: false
+    buildah-container:
+        enabled: false
+    caching:
+        enabled: false
+    capo:
+        enabled: false
+    ci-terraform-runner:
+        enabled: false
+    clair-in-ci-db:
+        enabled: false
+    cluster-template-charts:
+        enabled: false
+    community:
+        enabled: false
+    community-catalog:
+        enabled: false
+    coverage-dashboard:
+        enabled: false
+    coverport:
+        enabled: false
+    crossplane-components:
+        enabled: false
+    crossplane-control-plane:
+        enabled: false
+    deptriage:
+        enabled: false
+    dex:
+        enabled: false
+    diffused:
+        enabled: false
+    discussions:
+        enabled: false
+    docs:
+        enabled: false
+    e2e-tests:
+        enabled: false
+    etcd-shield:
+        enabled: false
+    external-secrets-operator:
+        enabled: false
+    git-clone:
+        enabled: false
+    group-sync-operator:
+        enabled: false
+    image-controller:
+        enabled: false
+    image-rbac-proxy:
+        enabled: false
+    infra-deployments:
+        enabled: false
+    integration-examples:
+        enabled: false
+    integration-service:
+        enabled: false
+    integration-service-utils:
+        enabled: false
+    internal-services:
+        enabled: false
+    kait-task:
+        enabled: false
+    kargo:
+        enabled: false
+    ko-builder:
+        enabled: false
+    konflux-build-cli:
+        enabled: false
+    konflux-casc:
+        enabled: false
+    konflux-ci:
+        enabled: false
+    konflux-ci.github.io:
+        enabled: false
+    konflux-clamav:
+        enabled: false
+    konflux-devlake-dashboards:
+        enabled: false
+    konflux-devlake-mcp:
+        enabled: false
+    konflux-lightspeed:
+        enabled: false
+    konflux-operator-tasks:
+        enabled: false
+    konflux-operator-trusted-sources:
+        enabled: false
+    konflux-sast-tasks:
+        enabled: false
+    konflux-test:
+        enabled: false
+    konflux-test-tasks:
+        enabled: false
+    konflux-ui:
+        enabled: false
+    kueue-external-admission:
+        enabled: false
+    kyverno:
+        enabled: false
+    llm-compressor-container:
+        enabled: false
+    loadtest:
+        enabled: false
+    may:
+        enabled: false
+    merge-queue-release-test:
+        enabled: false
+    mintmaker:
+        enabled: false
+    mintmaker-osv-database:
+        enabled: false
+    mintmaker-presets:
+        enabled: false
+    mintmaker-renovate-image:
+        enabled: false
+    mintmaker-schedule-calculator:
+        enabled: false
+    mobster:
+        enabled: false
+    multi-arch:
+        enabled: false
+    multi-arch-konflux-example:
+        enabled: false
+    multi-arch-konflux-sample:
+        enabled: false
+    multi-platform-controller:
+        enabled: false
+    multi-version-konflux-stage-sample:
+        enabled: false
+    namespace-generator:
+        enabled: false
+    namespace-lister:
+        enabled: false
+    no-github-app-sample:
+        enabled: false
+    notification-service:
+        enabled: false
+    oauth2-proxy:
+        enabled: false
+    olm-operator-konflux-sample:
+        enabled: false
+    operator-sdk-builder:
+        enabled: false
+    operator-toolkit:
+        enabled: false
+    oras-container:
+        enabled: true
+    paketo-container:
+        enabled: false
+    pipeline-migration-tool:
+        enabled: false
+    pipeline-samples:
+        enabled: false
+    planning:
+        enabled: false
+    prioritize:
+        enabled: false
+    project-controller:
+        enabled: false
+    pulp-tool:
+        enabled: false
+    qe-tools:
+        enabled: false
+    quality-dashboard:
+        enabled: false
+    refresh-rpm-lockfiles:
+        enabled: false
+    release-service:
+        enabled: false
+    release-service-automations:
+        enabled: false
+    release-service-catalog:
+        enabled: false
+    release-service-catalog-e2e-base:
+        enabled: false
+    release-service-collectors:
+        enabled: false
+    release-service-docs:
+        enabled: false
+    release-service-monitor:
+        enabled: false
+    release-service-utils:
+        enabled: false
+    release-test:
+        enabled: false
+    renovate-config-validator-action:
+        enabled: false
+    renovate-log-analyzer:
+        enabled: false
+    rpm-lockfile-prototype:
+        enabled: false
+    rpmbuild-pipeline:
+        enabled: false
+    rpmbuild-pipeline-environment-container:
+        enabled: false
+    rpmbuild-pipeline-monorepo-mock-config-test:
+        enabled: false
+    rpmbuild-pipeline-test-sources:
+        enabled: false
+    rust-builder:
+        enabled: false
+    sample-component-golang:
+        enabled: false
+    sample-component-golang-updater:
+        enabled: false
+    segment-bridge:
+        enabled: false
+    signing:
+        enabled: false
+    skills:
+        enabled: false
+    smee-sidecar:
+        enabled: false
+    support:
+        enabled: false
+    task-repo-shared-ci:
+        enabled: false
+    task-runner:
+        enabled: false
+    tekton-integration-catalog:
+        enabled: false
+    tekton-kueue:
+        enabled: false
+    tekton-tools:
+        enabled: false
+    tektor:
+        enabled: false
+    test-data-sast:
+        enabled: false
+    testrepo:
+        enabled: false
+    testrepo-updater:
+        enabled: false
+    tests-common-packages:
+        enabled: false
+    to-be-deleted:
+        enabled: false
+    tools:
+        enabled: false
+    workspace-manager:
+        enabled: false
+    yarn-builder:
+        enabled: false
+    yq-container:
+        enabled: false
+    zot:
+        enabled: false
