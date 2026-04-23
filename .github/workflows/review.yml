@@ -1,0 +1,128 @@
+name: Review
+
+on:
+  workflow_dispatch:
+    inputs:
+      event_type:
+        required: true
+        type: string
+      source_repo:
+        required: true
+        type: string
+      event_payload:
+        required: true
+        type: string
+
+concurrency:
+  group: fullsend-review-${{ fromJSON(inputs.event_payload).pull_request.number || fromJSON(inputs.event_payload).issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Review
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout .fullsend repository
+        uses: actions/checkout@v6
+
+      - name: Validate source repo is enrolled
+        env:
+          SOURCE_REPO: ${{ inputs.source_repo }}
+        run: |
+          # Format check — must be owner/repo, safe characters only
+          if [[ ! "$SOURCE_REPO" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$ ]]; then
+            echo "::error::Invalid source_repo format: must be owner/repo"
+            exit 1
+          fi
+          # Owner check — must match this org
+          REPO_OWNER="${SOURCE_REPO%%/*}"
+          if [[ "$REPO_OWNER" != "$GITHUB_REPOSITORY_OWNER" ]]; then
+            echo "::error::source_repo owner does not match org"
+            exit 1
+          fi
+          # Allowlist check — repo must be enabled in config.yaml
+          REPO_NAME="${SOURCE_REPO#*/}"
+          ENABLED=$(yq ".repos.\"$REPO_NAME\".enabled" config.yaml 2>/dev/null)
+          if [[ "$ENABLED" != "true" ]]; then
+            echo "::error::repo is not enabled in config.yaml"
+            exit 1
+          fi
+
+      - name: Extract target repo name
+        id: repo-parts
+        env:
+          SOURCE_REPO: ${{ inputs.source_repo }}
+        run: echo "name=${SOURCE_REPO##*/}" >> "${GITHUB_OUTPUT}"
+
+      - name: Generate sandbox token (read-only)
+        id: sandbox-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.FULLSEND_REVIEW_CLIENT_ID }}
+          private-key: ${{ secrets.FULLSEND_REVIEW_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.repo-parts.outputs.name }}
+          permission-contents: read
+          permission-pull-requests: read
+          permission-issues: read
+
+      - name: Generate review token (write)
+        id: review-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.FULLSEND_REVIEW_CLIENT_ID }}
+          private-key: ${{ secrets.FULLSEND_REVIEW_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.repo-parts.outputs.name }}
+          permission-pull-requests: write
+
+      - name: Checkout target repository
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.source_repo }}
+          token: ${{ steps.sandbox-token.outputs.token }}
+          path: target-repo
+          fetch-depth: 1
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FULLSEND_GCP_SA_KEY_JSON }}
+
+      - name: Mask GCP credential file paths
+        run: |
+          for var in GOOGLE_GHA_CREDS_PATH GOOGLE_APPLICATION_CREDENTIALS CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE; do
+            val="${!var:-}"
+            if [[ -n "${val}" ]]; then
+              echo "::add-mask::${val}"
+            fi
+          done
+
+      - name: Setup agent environment
+        env:
+          AGENT_PREFIX: REVIEW_
+          REVIEW_GH_TOKEN: ${{ steps.sandbox-token.outputs.token }}
+          REVIEW_TARGET_REPO_DIR: target-repo
+          REVIEW_ANTHROPIC_VERTEX_PROJECT_ID: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
+          REVIEW_CLOUD_ML_REGION: ${{ vars.FULLSEND_GCP_REGION }}
+        run: bash .github/scripts/setup-agent-env.sh
+
+      - name: Install validation dependencies
+        run: pip install --quiet "jsonschema>=4.18.0"
+
+      - name: Run review agent
+        uses: ./.github/actions/fullsend
+        env:
+          GITHUB_ISSUE_URL: ${{ fromJSON(inputs.event_payload).issue.html_url }}
+          GITHUB_PR_URL: ${{ fromJSON(inputs.event_payload).pull_request.html_url || fromJSON(inputs.event_payload).issue.html_url }}
+          REVIEW_TOKEN: ${{ steps.review-token.outputs.token }}
+          REPO_FULL_NAME: ${{ inputs.source_repo }}
+          PR_NUMBER: ${{ fromJSON(inputs.event_payload).pull_request.number || fromJSON(inputs.event_payload).issue.number }}
+        with:
+          agent: review
