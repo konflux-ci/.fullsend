@@ -1,0 +1,37 @@
+agent: agents/review.md
+model: opus
+image: ghcr.io/fullsend-ai/fullsend-code:latest
+policy: policies/review.yaml
+
+skills:
+  - skills/pr-review
+  - skills/code-review
+
+pre_script: scripts/pre-review.sh
+
+host_files:
+  - src: env/gcp-vertex.env
+    dest: /tmp/workspace/.env.d/gcp-vertex.env
+    expand: true
+  - src: ${GOOGLE_APPLICATION_CREDENTIALS}
+    dest: /tmp/workspace/.gcp-credentials.json
+  - src: env/review.env
+    dest: /tmp/workspace/.env.d/review.env
+    expand: true
+  - src: scripts/scan-unicode
+    dest: /tmp/workspace/bin/scan-unicode
+
+validation_loop:
+  script: scripts/validate-output-schema.sh
+  max_iterations: 2
+
+post_script: scripts/post-review.sh
+
+runner_env:
+  REVIEW_TOKEN: "${REVIEW_TOKEN}"
+  REPO_FULL_NAME: "${REPO_FULL_NAME}"
+  PR_NUMBER: "${PR_NUMBER}"
+  GITHUB_PR_URL: "${GITHUB_PR_URL}"
+  FULLSEND_OUTPUT_SCHEMA: ${FULLSEND_DIR}/schemas/review-result.schema.json
+
+timeout_minutes: 20
