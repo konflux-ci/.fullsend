@@ -140,7 +140,7 @@ repos:
     konflux-test-tasks:
         enabled: false
     konflux-ui:
-        enabled: false
+        enabled: true
     kueue-external-admission:
         enabled: false
     kyverno:
