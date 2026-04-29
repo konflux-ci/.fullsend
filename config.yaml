@@ -29,6 +29,8 @@ agents:
       name: konflux-ci-review
       slug: konflux-ci-review
 repos:
+    .fullsend:
+        enabled: false
     .github:
         enabled: false
     application-api:
@@ -96,8 +98,6 @@ repos:
     image-controller:
         enabled: false
     image-rbac-proxy:
-        enabled: false
-    infra-deployments:
         enabled: false
     integration-examples:
         enabled: false
@@ -195,11 +195,15 @@ repos:
         enabled: true
     paketo-container:
         enabled: false
+    perfscale:
+        enabled: false
     pipeline-migration-tool:
         enabled: false
     pipeline-samples:
         enabled: false
     planning:
+        enabled: false
+    pr-review-webhook:
         enabled: false
     prioritize:
         enabled: false
