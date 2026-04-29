@@ -11,6 +11,9 @@
 # titles, comment bodies, and PR descriptions.
 name: fullsend
 
+permissions:
+  contents: read
+
 on:
   issues:
     types: [labeled]
@@ -33,7 +36,8 @@ jobs:
           (github.event.comment.author_association != 'NONE' ||
             github.event.comment.user.login == github.event.issue.user.login) &&
           !endsWith(github.event.comment.user.login, '[bot]') &&
-          contains(toJSON(github.event.issue.labels.*.name), 'needs-info')
+          contains(toJSON(github.event.issue.labels.*.name), 'needs-info') &&
+          !contains(toJSON(github.event.issue.labels.*.name), 'type/feature')
         )
       )
     steps:

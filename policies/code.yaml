@@ -7,7 +7,7 @@ version: 1
 #   - GitHub API (gh/git only — curl intentionally excluded to prevent
 #     disallowedTools bypass via raw HTTP with the injected GH_TOKEN)
 #   - gitleaks releases (fallback download if not pre-installed in image)
-#   - npm/PyPI/Go registries (running tests may pull dev dependencies)
+#   - npm/yarn/pnpm/PyPI/Go registries (running tests may pull dev dependencies)
 #   - pre-commit binary needs github (clone hook repos), package registries
 #     (pip install hook deps), and GitHub releases (hook binaries like gitleaks)
 
@@ -82,6 +82,11 @@ network_policies:
         protocol: tcp
         enforcement: enforce
         access: allow
+      - host: "registry.yarnpkg.com"
+        port: 443
+        protocol: tcp
+        enforcement: enforce
+        access: allow
       - host: "pypi.org"
         port: 443
         protocol: tcp
@@ -109,6 +114,10 @@ network_policies:
         access: allow
     binaries:
       - path: "**/npm"
+      - path: "**/npx"
+      - path: "**/yarn"
+      - path: "**/yarnpkg"
+      - path: "**/pnpm"
       - path: "**/node"
       - path: "**/pip"
       - path: "**/pip3"
