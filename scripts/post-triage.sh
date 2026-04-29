@@ -72,7 +72,7 @@ case "${ACTION}" in
       exit 1
     fi
     echo "Posting clarifying question..."
-    printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
+    printf '%s' "${COMMENT}" | fullsend post-comment --repo "${REPO}" --number "${ISSUE_NUMBER}" --marker "<!-- fullsend:triage-agent -->" --token "${GH_TOKEN}" --result -
 
     echo "Applying label..."
     add_label "needs-info"
@@ -89,7 +89,7 @@ case "${ACTION}" in
       exit 1
     fi
     echo "Posting duplicate notice..."
-    printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
+    printf '%s' "${COMMENT}" | fullsend post-comment --repo "${REPO}" --number "${ISSUE_NUMBER}" --marker "<!-- fullsend:triage-agent -->" --token "${GH_TOKEN}" --result -
 
     echo "Applying label and closing..."
     add_label "duplicate"
@@ -111,10 +111,27 @@ case "${ACTION}" in
     fi
 
     echo "Posting triage summary..."
-    printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
+    printf '%s' "${COMMENT}" | fullsend post-comment --repo "${REPO}" --number "${ISSUE_NUMBER}" --marker "<!-- fullsend:triage-agent -->" --token "${GH_TOKEN}" --result -
 
     echo "Applying label..."
     add_label "ready-to-code"
+    ;;
+
+  feature-request)
+    if [[ -z "${COMMENT}" ]]; then
+      echo "ERROR: action is 'feature-request' but no comment provided"
+      exit 1
+    fi
+    echo "Posting feature-request comment..."
+    printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
+
+    echo "Removing bug-related labels..."
+    for label in bug bug-report type/bug; do
+      gh api "repos/${REPO}/issues/${ISSUE_NUMBER}/labels/${label}" -X DELETE --silent 2>/dev/null || true
+    done
+
+    echo "Applying type/feature label..."
+    add_label "type/feature"
     ;;
 
   *)

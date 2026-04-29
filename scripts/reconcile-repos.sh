@@ -17,8 +17,8 @@ SHIM_TEMPLATE="$CONFIG_DIR/templates/shim-workflow.yaml"
 SHIM_PATH=".github/workflows/fullsend.yaml"
 ENROLL_BRANCH="fullsend/onboard"
 UNENROLL_BRANCH="fullsend/offboard"
-ENROLL_PR_TITLE="Connect to fullsend agent pipeline"
-UNENROLL_PR_TITLE="Disconnect from fullsend agent pipeline"
+ENROLL_PR_TITLE="chore: connect to fullsend agent pipeline"
+UNENROLL_PR_TITLE="chore: disconnect from fullsend agent pipeline"
 ENROLL_PR_BODY="This PR adds a shim workflow that routes repository events to the fullsend agent dispatch workflow in the \`.fullsend\` config repo.
 
 Once merged, issues, PRs, and comments in this repo will be handled by the fullsend agent pipeline."

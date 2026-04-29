@@ -6,10 +6,17 @@
 # This shim never checks out PR code, so it is not vulnerable to "pwn request"
 # attacks (see: Trivy CVE-2026-33634, hackerbot-claw campaign).
 #
-# The event payload is passed via an environment variable (not inline shell)
+# The event payload is built from individual context fields (not inline shell)
 # to prevent script injection from attacker-controlled fields like issue
 # titles, comment bodies, and PR descriptions.
+#
+# Only the fields consumed by downstream workflows are dispatched. The full
+# github.event can exceed GitHub's 65KB workflow_dispatch input limit on
+# large dependency-update PRs (Renovate/Mintmaker bodies alone can be ~38KB).
 name: fullsend
+
+permissions:
+  contents: read
 
 on:
   issues:
@@ -33,14 +40,27 @@ jobs:
           (github.event.comment.author_association != 'NONE' ||
             github.event.comment.user.login == github.event.issue.user.login) &&
           !endsWith(github.event.comment.user.login, '[bot]') &&
-          contains(toJSON(github.event.issue.labels.*.name), 'needs-info')
+          contains(toJSON(github.event.issue.labels.*.name), 'needs-info') &&
+          !contains(toJSON(github.event.issue.labels.*.name), 'type/feature')
         )
       )
     steps:
+      - name: Build minimal payload
+        id: payload
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_HTML_URL: ${{ github.event.issue.html_url }}
+        run: |
+          set -euo pipefail
+          PAYLOAD=$(jq -cn \
+            --arg in "${ISSUE_NUMBER:-}" \
+            --arg iu "${ISSUE_HTML_URL:-}" \
+            '{issue: {number: (if $in != "" then ($in | tonumber) else null end), html_url: (if $iu != "" then $iu else null end)}}')
+          echo "json=$PAYLOAD" >> "$GITHUB_OUTPUT"
       - name: Dispatch triage
         env:
           GH_TOKEN: ${{ secrets.FULLSEND_DISPATCH_TOKEN }}
-          EVENT_PAYLOAD: ${{ toJSON(github.event) }}
+          EVENT_PAYLOAD: ${{ steps.payload.outputs.json }}
           EVENT_TYPE: ${{ github.event_name }}
           SOURCE_REPO: ${{ github.repository }}
           DISPATCH_REPO: ${{ github.repository_owner }}/.fullsend
@@ -61,10 +81,22 @@ jobs:
         startsWith(github.event.comment.body, '/code ')
       ))
     steps:
+      - name: Build minimal payload
+        id: payload
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_HTML_URL: ${{ github.event.issue.html_url }}
+        run: |
+          set -euo pipefail
+          PAYLOAD=$(jq -cn \
+            --arg in "${ISSUE_NUMBER:-}" \
+            --arg iu "${ISSUE_HTML_URL:-}" \
+            '{issue: {number: (if $in != "" then ($in | tonumber) else null end), html_url: (if $iu != "" then $iu else null end)}}')
+          echo "json=$PAYLOAD" >> "$GITHUB_OUTPUT"
       - name: Dispatch code
         env:
           GH_TOKEN: ${{ secrets.FULLSEND_DISPATCH_TOKEN }}
-          EVENT_PAYLOAD: ${{ toJSON(github.event) }}
+          EVENT_PAYLOAD: ${{ steps.payload.outputs.json }}
           EVENT_TYPE: ${{ github.event_name }}
           SOURCE_REPO: ${{ github.repository }}
           DISPATCH_REPO: ${{ github.repository_owner }}/.fullsend
@@ -86,10 +118,27 @@ jobs:
       )) ||
       github.event_name == 'pull_request_target'
     steps:
+      - name: Build minimal payload
+        id: payload
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_HTML_URL: ${{ github.event.issue.html_url }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HTML_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          set -euo pipefail
+          PAYLOAD=$(jq -cn \
+            --arg in "${ISSUE_NUMBER:-}" \
+            --arg iu "${ISSUE_HTML_URL:-}" \
+            --arg pn "${PR_NUMBER:-}" \
+            --arg pu "${PR_HTML_URL:-}" \
+            '{issue: {number: (if $in != "" then ($in | tonumber) else null end), html_url: (if $iu != "" then $iu else null end)},
+              pull_request: {number: (if $pn != "" then ($pn | tonumber) else null end), html_url: (if $pu != "" then $pu else null end)}}')
+          echo "json=$PAYLOAD" >> "$GITHUB_OUTPUT"
       - name: Dispatch review
         env:
           GH_TOKEN: ${{ secrets.FULLSEND_DISPATCH_TOKEN }}
-          EVENT_PAYLOAD: ${{ toJSON(github.event) }}
+          EVENT_PAYLOAD: ${{ steps.payload.outputs.json }}
           EVENT_TYPE: ${{ github.event_name }}
           SOURCE_REPO: ${{ github.repository }}
           DISPATCH_REPO: ${{ github.repository_owner }}/.fullsend
