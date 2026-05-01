@@ -62,7 +62,7 @@ repos:
     clair-in-ci-db:
         enabled: false
     cluster-template-charts:
-        enabled: false
+        enabled: true
     community:
         enabled: false
     community-catalog:
@@ -182,7 +182,7 @@ repos:
     no-github-app-sample:
         enabled: false
     notification-service:
-        enabled: false
+        enabled: true
     oauth2-proxy:
         enabled: false
     olm-operator-konflux-sample:
@@ -208,7 +208,7 @@ repos:
     prioritize:
         enabled: false
     project-controller:
-        enabled: false
+        enabled: true
     pulp-tool:
         enabled: false
     qe-tools:
@@ -262,7 +262,7 @@ repos:
     skills:
         enabled: false
     smee-sidecar:
-        enabled: false
+        enabled: true
     support:
         enabled: false
     task-repo-shared-ci:
@@ -288,7 +288,7 @@ repos:
     to-be-deleted:
         enabled: false
     tools:
-        enabled: false
+        enabled: true
     workspace-manager:
         enabled: false
     yarn-builder:
