@@ -36,7 +36,7 @@ repos:
     application-api:
         enabled: false
     architecture:
-        enabled: false
+        enabled: true
     bazel-builder:
         enabled: false
     brand-assets:
