@@ -50,7 +50,7 @@ repos:
     clair-in-ci-db:
         enabled: false
     cluster-template-charts:
-        enabled: true
+        enabled: false
     community:
         enabled: false
     community-catalog:
@@ -60,9 +60,9 @@ repos:
     coverport:
         enabled: false
     crossplane-components:
-        enabled: false
+        enabled: true
     crossplane-control-plane:
-        enabled: false
+        enabled: true
     deptriage:
         enabled: false
     dex:
@@ -242,7 +242,7 @@ repos:
     sample-component-golang:
         enabled: false
     sample-component-golang-updater:
-        enabled: false
+        enabled: true
     segment-bridge:
         enabled: false
     signing:
@@ -270,7 +270,7 @@ repos:
     testrepo:
         enabled: false
     testrepo-updater:
-        enabled: false
+        enabled: true
     tests-common-packages:
         enabled: false
     to-be-deleted:
