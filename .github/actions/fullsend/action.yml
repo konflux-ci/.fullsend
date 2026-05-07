@@ -16,7 +16,7 @@ inputs:
     description: >-
       Release tag or version: use latest, v0.0.1, or 0.0.1. Download URLs use a leading v; asset
       names use the version without v (fullsend_0.0.1_linux_amd64.tar.gz).
-    default: latest
+    default: 0.6.0
 
 runs:
   using: composite
@@ -113,6 +113,10 @@ runs:
       run: |
         set -euo pipefail
         mkdir -p "${GITHUB_WORKSPACE}/output"
+        # SECURITY: Never expose --no-post-script as a workflow input.
+        # Post-scripts enforce secret scanning, protected-path blocks,
+        # and review-downgrade controls. Skipping them in CI bypasses
+        # all post-push security gates.
         fullsend run "${AGENT}" \
           --fullsend-dir "${GITHUB_WORKSPACE}" \
           --output-dir "${GITHUB_WORKSPACE}/output" \

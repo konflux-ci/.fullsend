@@ -54,31 +54,11 @@ jobs:
       - name: Checkout .fullsend repository
         uses: actions/checkout@v6
 
-      - name: Validate source repo is enrolled
-        env:
-          SOURCE_REPO: ${{ inputs.source_repo }}
-        run: |
-          if [[ ! "$SOURCE_REPO" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$ ]]; then
-            echo "::error::Invalid source_repo format: must be owner/repo"
-            exit 1
-          fi
-          REPO_OWNER="${SOURCE_REPO%%/*}"
-          if [[ "$REPO_OWNER" != "$GITHUB_REPOSITORY_OWNER" ]]; then
-            echo "::error::source_repo owner does not match org"
-            exit 1
-          fi
-          REPO_NAME="${SOURCE_REPO#*/}"
-          ENABLED=$(yq ".repos.\"$REPO_NAME\".enabled" config.yaml 2>/dev/null)
-          if [[ "$ENABLED" != "true" ]]; then
-            echo "::error::repo is not enabled in config.yaml"
-            exit 1
-          fi
-
-      - name: Extract target repo name
+      - name: Validate enrollment and extract repo metadata
         id: repo-parts
-        env:
-          SOURCE_REPO: ${{ inputs.source_repo }}
-        run: echo "name=${SOURCE_REPO##*/}" >> "${GITHUB_OUTPUT}"
+        uses: ./.github/actions/validate-enrollment
+        with:
+          source_repo: ${{ inputs.source_repo }}
 
       - name: Generate sandbox token (read-only)
         id: sandbox-token
@@ -205,6 +185,22 @@ jobs:
           echo "Fix iteration: ${ITERATION} (${FIX_COMMITS} previous fix commits)" >&2
           echo "iteration=${ITERATION}" >> "${GITHUB_OUTPUT}"
 
+      - name: Check fullsend-no-fix label
+        env:
+          GH_TOKEN: ${{ steps.sandbox-token.outputs.token }}
+          TRIGGER_SOURCE: ${{ inputs.trigger_source }}
+          PR_NUM: ${{ steps.context.outputs.pr_number }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
+        run: |
+          if [[ "${TRIGGER_SOURCE}" =~ \[bot\]$ ]]; then
+            HAS_NO_FIX=$(gh pr view "${PR_NUM}" --repo "${SOURCE_REPO}" \
+              --json labels --jq '[.labels[].name] | any(. == "fullsend-no-fix")' 2>/dev/null || echo "false")
+            if [[ "${HAS_NO_FIX}" == "true" ]]; then
+              echo "::warning::PR #${PR_NUM} has 'fullsend-no-fix' label — skipping bot-triggered fix"
+              exit 1
+            fi
+          fi
+
       - name: Generate push token (write)
         id: push-token
         uses: actions/create-github-app-token@v3
@@ -270,39 +266,13 @@ jobs:
           HUMAN_INSTRUCTION: ${{ steps.context.outputs.instruction }}
         run: bash scripts/pre-fix.sh
 
-      - name: Authenticate to Google Cloud (WIF)
-        if: vars.FULLSEND_GCP_AUTH_MODE == 'wif'
-        uses: google-github-actions/auth@v3
+      - name: Setup GCP and prepare credentials
+        uses: ./.github/actions/setup-gcp
         with:
-          workload_identity_provider: ${{ secrets.FULLSEND_GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.FULLSEND_GCP_WIF_SA_EMAIL }}
-
-      - name: Authenticate to Google Cloud (SA key)
-        if: vars.FULLSEND_GCP_AUTH_MODE != 'wif'
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.FULLSEND_GCP_SA_KEY_JSON }}
-
-      # GCP_OIDC_TOKEN_FILE is expected by google-github-actions/auth when using
-      # WIF. For non-WIF (SA key), we set it to an empty file to avoid undefined
-      # variable errors in downstream steps that may reference it.
-      - name: Set GCP_OIDC_TOKEN_FILE for non-WIF
-        if: vars.FULLSEND_GCP_AUTH_MODE != 'wif'
-        run: |
-          touch "$RUNNER_TEMP/empty-oidc-token"
-          echo "GCP_OIDC_TOKEN_FILE=$RUNNER_TEMP/empty-oidc-token" >> "${GITHUB_ENV}"
-
-      - name: Mask GCP credential file paths
-        run: |
-          for var in GOOGLE_GHA_CREDS_PATH GOOGLE_APPLICATION_CREDENTIALS CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE; do
-            val="${!var:-}"
-            if [[ -n "${val}" ]]; then
-              echo "::add-mask::${val}"
-            fi
-          done
-
-      - name: Prepare sandbox credentials
-        run: bash scripts/prepare-sandbox-credentials.sh
+          gcp_auth_mode: ${{ vars.FULLSEND_GCP_AUTH_MODE }}
+          gcp_wif_provider: ${{ secrets.FULLSEND_GCP_WIF_PROVIDER }}
+          gcp_wif_sa_email: ${{ secrets.FULLSEND_GCP_WIF_SA_EMAIL }}
+          gcp_sa_key_json: ${{ secrets.FULLSEND_GCP_SA_KEY_JSON }}
 
       - name: Setup agent environment
         env:

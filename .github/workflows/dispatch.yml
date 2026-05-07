@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       stage:
-        description: 'Stage name (triage, code, review, fix)'
+        description: 'Stage name (triage, code, review, fix, retro)'
         required: true
         type: string
       event_type:
@@ -72,6 +72,34 @@ jobs:
               echo "::error::Invalid trigger_source format: must be alphanumeric with optional [bot] suffix"
               exit 1
             fi
+          fi
+
+      - name: Check kill switch
+        # Intentionally fail-closed: if config.yaml is missing or corrupt,
+        # set -euo pipefail aborts the step → job fails → dispatch blocked.
+        run: |
+          set -euo pipefail
+          KILL_SWITCH=$(yq '.kill_switch // false' config.yaml)
+          if [[ "$KILL_SWITCH" == "true" ]]; then
+            echo "::error::Kill switch is active — all agent dispatch halted"
+            echo "::error::Set kill_switch: false in config.yaml to resume"
+            exit 1
+          fi
+
+      - name: Check role is enabled
+        env:
+          STAGE: ${{ inputs.stage }}
+        run: |
+          set -euo pipefail
+          STAGE_ROLE="$STAGE"
+          case "$STAGE" in
+            code) STAGE_ROLE="coder" ;;
+          esac
+
+          ROLES=$(yq '.defaults.roles[]' config.yaml 2>/dev/null || echo "")
+          if [[ -n "$ROLES" ]] && ! echo "$ROLES" | grep -Fqx "$STAGE_ROLE"; then
+            echo "::error::Stage '$STAGE' (role: $STAGE_ROLE) is not in defaults.roles — dispatch blocked"
+            exit 1
           fi
 
       - name: Find and trigger agent workflows for stage
@@ -145,6 +173,7 @@ jobs:
               echo "::error::Failed to dispatch $workflow_name: $output"
               exit 1
             fi
+            echo "::notice::Dispatched ${workflow_name} → ${output}"
             dispatched=$((dispatched + 1))
             dispatched_workflows+=("$workflow_name")
           done
