@@ -62,6 +62,10 @@ dimension carry over to another — each requires its own scrutiny.
 
 - Logic errors, off-by-one, nil/null handling
 - Edge cases and error paths not covered by the change
+- API contract changes: if the change modifies parameters sent to an
+  external API (GitHub, cloud providers, etc.), verify the API accepts
+  the new values for every code path that calls the function. Different
+  API operations often have different required fields.
 - Test adequacy: are the right behaviors tested?
 - Test integrity: do the tests actually constrain the code's behavior,
   or do they merely assert it runs? If test files covering the changed

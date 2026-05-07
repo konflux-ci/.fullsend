@@ -3,7 +3,7 @@ name: Repo Maintenance
 on:
   push:
     branches: [main]
-    paths: [config.yaml]
+    paths: [config.yaml, templates/shim-workflow.yaml]
   workflow_dispatch:
 
 concurrency:
