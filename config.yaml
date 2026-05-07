@@ -15,7 +15,19 @@ defaults:
         - review
     max_implementation_retries: 2
     auto_merge: false
-agents: []
+agents:
+    - role: fullsend
+      name: konflux-ci-fullsend
+      slug: konflux-ci-fullsend
+    - role: triage
+      name: konflux-ci-triage
+      slug: konflux-ci-triage
+    - role: coder
+      name: konflux-ci-coder
+      slug: konflux-ci-coder
+    - role: review
+      name: konflux-ci-review
+      slug: konflux-ci-review
 repos:
     .fullsend:
         enabled: false
