@@ -122,7 +122,7 @@ repos:
     konflux-ci:
         enabled: true
     konflux-ci.github.io:
-        enabled: false
+        enabled: true
     konflux-clamav:
         enabled: false
     konflux-devlake-dashboards:
