@@ -33,6 +33,8 @@ repos:
         enabled: false
     .github:
         enabled: false
+    agent-plugins:
+        enabled: true
     application-api:
         enabled: false
     architecture:
@@ -259,8 +261,6 @@ repos:
         enabled: false
     signing:
         enabled: false
-    skills:
-        enabled: true
     smee-sidecar:
         enabled: true
     support:
