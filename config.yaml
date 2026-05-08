@@ -260,7 +260,7 @@ repos:
     signing:
         enabled: false
     skills:
-        enabled: false
+        enabled: true
     smee-sidecar:
         enabled: true
     support:
