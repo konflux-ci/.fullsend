@@ -274,7 +274,7 @@ repos:
     tekton-kueue:
         enabled: false
     tekton-tools:
-        enabled: false
+        enabled: true
     tektor:
         enabled: false
     test-data-sast:
