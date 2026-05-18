@@ -5,6 +5,7 @@
 version: "1"
 dispatch:
     platform: github-actions
+    mode: oidc-mint
 inference:
     provider: vertex
 defaults:
@@ -13,22 +14,29 @@ defaults:
         - triage
         - coder
         - review
-        - fix
+        - retro
+        - prioritize
     max_implementation_retries: 2
     auto_merge: false
 agents:
     - role: fullsend
-      name: konflux-ci-fullsend
-      slug: konflux-ci-fullsend
+      name: fullsend-ai-fullsend
+      slug: fullsend-ai-fullsend
     - role: triage
-      name: konflux-ci-triage
-      slug: konflux-ci-triage
+      name: fullsend-ai-triage
+      slug: fullsend-ai-triage
     - role: coder
-      name: konflux-ci-coder
-      slug: konflux-ci-coder
+      name: fullsend-ai-coder
+      slug: fullsend-ai-coder
     - role: review
-      name: konflux-ci-review
-      slug: konflux-ci-review
+      name: fullsend-ai-review
+      slug: fullsend-ai-review
+    - role: retro
+      name: fullsend-ai-retro
+      slug: fullsend-ai-retro
+    - role: prioritize
+      name: fullsend-ai-prioritize
+      slug: fullsend-ai-prioritize
 repos:
     .fullsend:
         enabled: false
@@ -92,11 +100,7 @@ repos:
         enabled: false
     etcd-shield:
         enabled: false
-    external-secrets-operator:
-        enabled: false
     git-clone:
-        enabled: false
-    group-sync-operator:
         enabled: false
     image-controller:
         enabled: false
@@ -146,15 +150,11 @@ repos:
         enabled: true
     kueue-external-admission:
         enabled: false
-    kyverno:
-        enabled: false
     llm-compressor-container:
         enabled: false
     loadtest:
         enabled: false
     may:
-        enabled: false
-    merge-queue-release-test:
         enabled: false
     mintmaker:
         enabled: false
@@ -172,8 +172,6 @@ repos:
         enabled: false
     multi-arch-konflux-example:
         enabled: false
-    multi-arch-konflux-sample:
-        enabled: false
     multi-platform-controller:
         enabled: false
     multi-version-konflux-stage-sample:
@@ -181,8 +179,6 @@ repos:
     namespace-generator:
         enabled: false
     namespace-lister:
-        enabled: false
-    no-github-app-sample:
         enabled: false
     notification-service:
         enabled: true
@@ -285,8 +281,6 @@ repos:
     testrepo-updater:
         enabled: true
     tests-common-packages:
-        enabled: false
-    to-be-deleted:
         enabled: false
     tools:
         enabled: true
