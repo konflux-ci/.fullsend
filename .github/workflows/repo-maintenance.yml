@@ -3,7 +3,7 @@ name: Repo Maintenance
 on:
   push:
     branches: [main]
-    paths: [config.yaml, templates/shim-workflow.yaml]
+    paths: [config.yaml, templates/shim-workflow-call.yaml]
   workflow_dispatch:
 
 concurrency:
@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   reconcile:
@@ -21,13 +22,47 @@ jobs:
       - name: Checkout .fullsend
         uses: actions/checkout@v6
 
-      - name: Generate app token
-        id: app-token
-        uses: actions/create-github-app-token@v3
+      - name: Extract enrolled repo names from config
+        id: repo-list
+        run: |
+          REPOS=$(yq '.repos | keys | join(",")' config.yaml)
+          if [[ -z "$REPOS" ]]; then
+            echo "::error::No repos found in config.yaml"
+            exit 1
+          fi
+          echo "names=$REPOS" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout upstream scripts
+        uses: actions/checkout@v6
         with:
-          client-id: ${{ vars.FULLSEND_FULLSEND_CLIENT_ID }}
-          private-key: ${{ secrets.FULLSEND_FULLSEND_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
+          repository: fullsend-ai/fullsend
+          ref: v0
+          path: .defaults
+          sparse-checkout: |
+            internal/scaffold/fullsend-repo/scripts/
+
+      - name: Prepare scripts
+        run: |
+          set -euo pipefail
+          mkdir -p scripts
+          cp -r ".defaults/internal/scaffold/fullsend-repo/scripts/." scripts/
+          if [[ -d "customized/scripts" ]]; then
+            find "customized/scripts" -type f ! -name '.gitkeep' -print0 \
+              | while IFS= read -r -d '' f; do
+                  rel="${f#customized/}"
+                  mkdir -p "$(dirname "${rel}")"
+                  cp "${f}" "${rel}"
+                done
+          fi
+          rm -rf .defaults
+
+      - name: Mint fullsend token
+        id: app-token
+        uses: fullsend-ai/fullsend/.github/actions/mint-token@v0
+        with:
+          role: fullsend
+          repos: ${{ steps.repo-list.outputs.names }}
+          mint_url: ${{ vars.FULLSEND_MINT_URL }}
 
       - name: Reconcile target repos
         env:

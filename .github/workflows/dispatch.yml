@@ -1,28 +1,16 @@
-# Dispatcher workflow that fans out to agent workflows based on stage
+# lint-workflow-size: max-lines=390
+# Dispatcher workflow that routes events to agent workflows based on stage.
+# Routing logic determines the stage from event context — the shim only
+# forwards the raw event.  Adding a new stage requires only a case branch
+# here; zero changes to enrolled repos.
 name: Dispatch
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      stage:
-        description: 'Stage name (triage, code, review, fix, retro)'
+      event_action:
+        description: 'The event action (github.event.action) forwarded by the shim'
         required: true
-        type: string
-      event_type:
-        description: 'Original GitHub event type'
-        required: true
-        type: string
-      source_repo:
-        description: 'Source repository (owner/repo)'
-        required: true
-        type: string
-      event_payload:
-        description: 'GitHub event payload as JSON'
-        required: true
-        type: string
-      trigger_source:
-        description: 'Trigger source username (for fix stage audit trail)'
-        required: false
         type: string
 
 permissions: {}
@@ -33,40 +21,229 @@ jobs:
     permissions:
       actions: write
       contents: read
+      id-token: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Generate token for triggering workflows
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ vars.FULLSEND_FULLSEND_CLIENT_ID }}
-          private-key: ${{ secrets.FULLSEND_FULLSEND_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: .fullsend
-
-      - name: Validate inputs
+      - name: Determine stage
+        id: route
         env:
-          STAGE: ${{ inputs.stage }}
-          SOURCE_REPO: ${{ inputs.source_repo }}
-          TRIGGER_SOURCE: ${{ inputs.trigger_source }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ inputs.event_action }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_USER_TYPE: ${{ github.event.comment.user.type }}
+          COMMENT_USER_LOGIN: ${{ github.event.comment.user.login }}
+          COMMENT_AUTHOR_ASSOC: ${{ github.event.comment.author_association }}
+          ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          ISSUE_HAS_PR: ${{ github.event.issue.pull_request && 'true' || 'false' }}
+          ISSUE_USER_LOGIN: ${{ github.event.issue.user.login }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+          REVIEW_USER_LOGIN: ${{ github.event.review.user.login }}
+          TRIGGERING_LABEL: ${{ github.event.label.name }}
+          PR_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          PR_BASE_REPO: ${{ github.event.pull_request.base.repo.full_name }}
+          PR_USER_LOGIN: ${{ github.event.pull_request.user.login }}
+          ORG_NAME: ${{ github.repository_owner }}
         run: |
           set -euo pipefail
 
-          # Validate source_repo format (defense-in-depth before fan-out)
-          if [[ ! "$SOURCE_REPO" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$ ]]; then
-            echo "::error::Invalid source_repo format: must be owner/repo"
-            exit 1
+          STAGE=""
+          TRIGGER_SOURCE=""
+
+          # Helper: check author_association is authorized (OWNER, MEMBER, COLLABORATOR)
+          is_authorized() {
+            case "${COMMENT_AUTHOR_ASSOC}" in
+              OWNER|MEMBER|COLLABORATOR) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          # Helper: check if user is the PR/issue author
+          is_issue_author() {
+            [[ "${COMMENT_USER_LOGIN}" == "${ISSUE_USER_LOGIN}" ]]
+          }
+
+          # Helper: check if a label is present in a comma-separated list.
+          # Usage: has_label <name> [label_csv]  (defaults to ISSUE_LABELS)
+          has_label() {
+            local needle="$1"
+            local csv="${2:-${ISSUE_LABELS}}"
+            IFS=',' read -ra labels <<< "${csv}"
+            for l in "${labels[@]}"; do
+              [[ "$l" == "$needle" ]] && return 0
+            done
+            return 1
+          }
+
+          # Extract the first word of the comment as the command
+          COMMAND=""
+          if [[ -n "${COMMENT_BODY:-}" ]]; then
+            COMMAND="$(printf '%s\n' "${COMMENT_BODY}" | head -1 | awk '{print $1}')"
           fi
 
-          # Validate stage name format (alphanumeric, underscore, hyphen only)
+          case "${EVENT_NAME}" in
+            issue_comment)
+              case "${COMMAND}" in
+                /fs-triage)
+                  STAGE="triage"
+                  ;;
+                /fs-code)
+                  if [[ "${ISSUE_HAS_PR}" == "false" ]]; then
+                    STAGE="code"
+                  fi
+                  ;;
+                /fs-review)
+                  STAGE="review"
+                  ;;
+                /fs-fix)
+                  if [[ "${ISSUE_HAS_PR}" == "true" ]]; then
+                    if [[ "${COMMENT_USER_TYPE}" != "Bot" ]] && is_authorized; then
+                      STAGE="fix"
+                      TRIGGER_SOURCE="${COMMENT_USER_LOGIN}"
+                    fi
+                  fi
+                  ;;
+                /fs-retro|/fullsend)
+                  if [[ "${COMMENT_USER_TYPE}" != "Bot" ]] && is_authorized; then
+                    if [[ "${COMMAND}" == "/fullsend" ]]; then
+                      SECOND_WORD="$(printf '%s\n' "${COMMENT_BODY}" | head -1 | awk '{print $2}')"
+                      if [[ "${SECOND_WORD}" == "retro" ]]; then
+                        STAGE="retro"
+                      fi
+                    else
+                      STAGE="retro"
+                    fi
+                  fi
+                  ;;
+                /fs-prioritize)
+                  if [[ "${COMMENT_USER_TYPE}" != "Bot" ]] && is_authorized; then
+                    STAGE="prioritize"
+                  fi
+                  ;;
+                *)
+                  # Non-command issue_comment: auto-triage on needs-info issues
+                  # when commenter is a non-bot with association != NONE or is issue author
+                  if has_label "needs-info" && ! has_label "type/feature"; then
+                    if [[ "${COMMENT_USER_TYPE}" != "Bot" ]]; then
+                      if [[ "${COMMENT_AUTHOR_ASSOC}" != "NONE" ]] || is_issue_author; then
+                        STAGE="triage"
+                      fi
+                    fi
+                  fi
+                  ;;
+              esac
+              ;;
+
+            issues)
+              if [[ "${EVENT_ACTION}" == "opened" || "${EVENT_ACTION}" == "edited" ]]; then
+                STAGE="triage"
+              elif [[ "${EVENT_ACTION}" == "labeled" ]]; then
+                if [[ "${TRIGGERING_LABEL}" == "ready-to-code" ]]; then
+                  STAGE="code"
+                elif [[ "${TRIGGERING_LABEL}" == "ready-for-review" ]]; then
+                  STAGE="review"
+                fi
+              fi
+              ;;
+
+            pull_request_target)
+              case "${EVENT_ACTION}" in
+                opened|synchronize|ready_for_review)
+                  STAGE="review"
+                  ;;
+                closed)
+                  STAGE="retro"
+                  ;;
+              esac
+              ;;
+
+            pull_request_review)
+              if [[ "${EVENT_ACTION}" == "submitted" && "${REVIEW_STATE}" == "changes_requested" ]]; then
+                REVIEW_BOT="${ORG_NAME}-review[bot]"
+                if [[ "${REVIEW_USER_LOGIN}" == "${REVIEW_BOT}" ]]; then
+                  # Block fork PRs — fail closed if we cannot determine
+                  if [[ -n "${PR_HEAD_REPO}" && -n "${PR_BASE_REPO}" ]]; then
+                    if [[ "${PR_HEAD_REPO}" == "${PR_BASE_REPO}" ]]; then
+                      # Check no-fix label (use PR_LABELS — issue.labels is empty
+                      # on pull_request_review events)
+                      if ! has_label "fullsend-no-fix" "${PR_LABELS}"; then
+                        # Human PRs require the fullsend-fix label to auto-trigger
+                        # the fix agent. The /fs-fix slash command intentionally
+                        # bypasses this gate — authorized users can always trigger
+                        # fix manually regardless of labels.
+                        if [[ "${PR_USER_LOGIN}" =~ \[bot\]$ ]] || has_label "fullsend-fix" "${PR_LABELS}"; then
+                          STAGE="fix"
+                          TRIGGER_SOURCE="${REVIEW_USER_LOGIN}"
+                        fi
+                      fi
+                    fi
+                  fi
+                fi
+              fi
+              ;;
+          esac
+
+          if [[ -z "${STAGE}" ]]; then
+            echo "No stage matched — skipping dispatch"
+            echo "stage=" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "Routed to stage: ${STAGE}"
+          echo "stage=${STAGE}" >> "${GITHUB_OUTPUT}"
+          echo "trigger_source=${TRIGGER_SOURCE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Mint dispatch token via OIDC
+        if: steps.route.outputs.stage != ''
+        id: oidc-mint
+        env:
+          MINT_URL: ${{ vars.FULLSEND_MINT_URL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$MINT_URL" ]]; then
+            echo "::error::FULLSEND_MINT_URL org variable is not set"
+            exit 1
+          fi
+          echo "::add-mask::$MINT_URL"
+          OIDC_TOKEN=$(curl -sSf --retry 3 --retry-delay 2 --retry-all-errors \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=fullsend-mint" | jq -r '.value')
+          if [[ -z "$OIDC_TOKEN" || "$OIDC_TOKEN" == "null" ]]; then
+            echo "::error::Failed to obtain OIDC token"
+            exit 1
+          fi
+          echo "::add-mask::$OIDC_TOKEN"
+          TOKEN=$(curl -sSf --retry 5 --retry-delay 5 --retry-all-errors \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"role":"fullsend","repos":[".fullsend"]}' \
+            "${MINT_URL}/v1/token" | jq -r '.token')
+          if [[ -z "$TOKEN" || "$TOKEN" == "null" ]]; then
+            echo "::error::Token mint returned no token"
+            exit 1
+          fi
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        if: steps.route.outputs.stage != ''
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ job.workflow_repository }}
+          token: ${{ steps.oidc-mint.outputs.token }}
+
+      - name: Validate routed stage
+        if: steps.route.outputs.stage != ''
+        env:
+          STAGE: ${{ steps.route.outputs.stage }}
+          TRIGGER_SOURCE: ${{ steps.route.outputs.trigger_source }}
+        run: |
+          set -euo pipefail
+
           if [[ ! "$STAGE" =~ ^[a-z][a-z0-9_-]*$ ]]; then
             echo "::error::Invalid stage name: must start with lowercase letter and contain only [a-z0-9_-]"
             exit 1
           fi
 
-          # Validate trigger_source format if provided (GitHub username with optional [bot] suffix)
           if [[ -n "${TRIGGER_SOURCE:-}" ]]; then
             if [[ ! "$TRIGGER_SOURCE" =~ ^[a-zA-Z0-9_-]+(\[bot\])?$ ]]; then
               echo "::error::Invalid trigger_source format: must be alphanumeric with optional [bot] suffix"
@@ -75,8 +252,7 @@ jobs:
           fi
 
       - name: Check kill switch
-        # Intentionally fail-closed: if config.yaml is missing or corrupt,
-        # set -euo pipefail aborts the step → job fails → dispatch blocked.
+        if: steps.route.outputs.stage != ''
         run: |
           set -euo pipefail
           KILL_SWITCH=$(yq '.kill_switch // false' config.yaml)
@@ -87,13 +263,15 @@ jobs:
           fi
 
       - name: Check role is enabled
+        if: steps.route.outputs.stage != ''
         env:
-          STAGE: ${{ inputs.stage }}
+          STAGE: ${{ steps.route.outputs.stage }}
         run: |
           set -euo pipefail
           STAGE_ROLE="$STAGE"
           case "$STAGE" in
             code) STAGE_ROLE="coder" ;;
+            retro|prioritize) STAGE_ROLE="fullsend" ;;
           esac
 
           ROLES=$(yq '.defaults.roles[]' config.yaml 2>/dev/null || echo "")
@@ -102,16 +280,47 @@ jobs:
             exit 1
           fi
 
-      - name: Find and trigger agent workflows for stage
+      - name: Block fork PRs for fix stage
+        if: steps.route.outputs.stage == 'fix' && github.event.issue.pull_request
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          STAGE: ${{ inputs.stage }}
-          EVENT_TYPE: ${{ inputs.event_type }}
-          SOURCE_REPO: ${{ inputs.source_repo }}
-          EVENT_PAYLOAD: ${{ inputs.event_payload }}
-          TRIGGER_SOURCE: ${{ inputs.trigger_source }}
+          GH_TOKEN: ${{ steps.oidc-mint.outputs.token }}
+          SOURCE_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
         run: |
           set -euo pipefail
+          HEAD_REPO=$(gh api "repos/$SOURCE_REPO/pulls/$PR_NUMBER" --jq '.head.repo.full_name' 2>/dev/null || true)
+          BASE_REPO=$(gh api "repos/$SOURCE_REPO/pulls/$PR_NUMBER" --jq '.base.repo.full_name' 2>/dev/null || true)
+          if [[ -z "$HEAD_REPO" || -z "$BASE_REPO" ]]; then
+            echo "::error::Cannot determine fork status — blocking fix agent (fail-closed)"
+            exit 1
+          fi
+          if [[ "$HEAD_REPO" != "$BASE_REPO" ]]; then
+            echo "::error::Fork PR detected (head=$HEAD_REPO, base=$BASE_REPO) — fix agent blocked"
+            exit 1
+          fi
+
+      - name: Find and trigger agent workflows for stage
+        if: steps.route.outputs.stage != ''
+        env:
+          GH_TOKEN: ${{ steps.oidc-mint.outputs.token }}
+          STAGE: ${{ steps.route.outputs.stage }}
+          EVENT_TYPE: ${{ github.event_name }}
+          SOURCE_REPO: ${{ github.repository }}
+          TRIGGER_SOURCE: ${{ steps.route.outputs.trigger_source }}
+          DISPATCH_REPO: ${{ job.workflow_repository }}
+        run: |
+          set -euo pipefail
+
+          # Build a minimal event payload with only the fields agent workflows need.
+          # Read from $GITHUB_EVENT_PATH (on-disk JSON) to avoid expression-context
+          # injection risks from toJSON(github.event).
+          EVENT_PAYLOAD=$(jq -c '{
+            issue: (.issue // null | if . then {number, html_url} else null end),
+            pull_request: (.pull_request // null | if . then {number, html_url,
+              head: {ref: .head.ref, repo: {full_name: .head.repo.full_name}},
+              base: {ref: .base.ref, repo: {full_name: .base.repo.full_name}}} else null end),
+            comment: (.comment // null | if . then {body: .body[:4096]} else null end)
+          }' "$GITHUB_EVENT_PATH")
 
           echo "Scanning for workflows with stage: $STAGE"
 
@@ -121,33 +330,25 @@ jobs:
           skipped=0
 
           for workflow in .github/workflows/*.yml .github/workflows/*.yaml; do
-            # Skip if file doesn't exist (glob expansion when no matches)
             [[ -f "$workflow" ]] || continue
 
             scanned=$((scanned + 1))
             workflow_name=$(basename "$workflow")
 
-            # Never dispatch ourselves (guard against accidental stage marker)
             if [[ "$workflow_name" == "dispatch.yml" || "$workflow_name" == "dispatch.yaml" ]]; then
               echo "Skipped $workflow_name (self-dispatch guard)"
               skipped=$((skipped + 1))
               continue
             fi
 
-            # Extract stage from comment (first line with # fullsend-stage:)
-            # Format: # fullsend-stage: <stage-name>
-            # Stage names: lowercase letter + [a-z0-9_-]*
-            # || true prevents pipefail abort when grep finds no match
             workflow_stage=$(grep -E '^# fullsend-stage:' "$workflow" | head -1 | sed -n 's/^# fullsend-stage: *\([a-z][a-z0-9_-]*\).*/\1/p' || true)
 
-            # Skip if no stage marker
             if [[ -z "$workflow_stage" ]]; then
               echo "Skipped $workflow_name (no stage marker)"
               skipped=$((skipped + 1))
               continue
             fi
 
-            # Skip if stage doesn't match
             if [[ "$workflow_stage" != "$STAGE" ]]; then
               echo "Skipped $workflow_name (stage=$workflow_stage, wanted=$STAGE)"
               skipped=$((skipped + 1))
@@ -156,15 +357,13 @@ jobs:
 
             echo "Triggering $workflow_name for stage $STAGE"
 
-            # Build gh workflow run arguments
             DISPATCH_ARGS=(
-              --repo "$GITHUB_REPOSITORY"
+              --repo "$DISPATCH_REPO"
               -f event_type="$EVENT_TYPE"
               -f source_repo="$SOURCE_REPO"
               -f event_payload="$EVENT_PAYLOAD"
             )
 
-            # Forward trigger_source if provided (fix stage only)
             if [[ -n "${TRIGGER_SOURCE:-}" ]] && [[ "$STAGE" == "fix" ]]; then
               DISPATCH_ARGS+=(-f trigger_source="$TRIGGER_SOURCE")
             fi
