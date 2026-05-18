@@ -13,6 +13,7 @@ defaults:
         - fullsend
         - triage
         - coder
+        - fix
         - review
         - retro
         - prioritize
