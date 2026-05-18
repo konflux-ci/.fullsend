@@ -15,7 +15,10 @@ defaults:
         - coder
         - fix
         - review
-        - retro
+        # Retro agent is awesome, but it currently has a bug where it fails to
+        # post a comment back on the PR that triggered it. Let's re-enable
+        # after this is fixed: https://github.com/fullsend-ai/fullsend/issues/1076
+        #- retro
         - prioritize
     max_implementation_retries: 2
     auto_merge: false
