@@ -75,7 +75,7 @@ repos:
     ci-terraform-runner:
         enabled: false
     clair-in-ci-db:
-        enabled: false
+        enabled: true
     cluster-template-charts:
         enabled: false
     community:
@@ -113,7 +113,7 @@ repos:
     integration-examples:
         enabled: false
     integration-service:
-        enabled: false
+        enabled: true
     integration-service-utils:
         enabled: false
     internal-services:
@@ -133,7 +133,7 @@ repos:
     konflux-ci.github.io:
         enabled: true
     konflux-clamav:
-        enabled: false
+        enabled: true
     konflux-devlake-dashboards:
         enabled: false
     konflux-devlake-mcp:
@@ -147,9 +147,9 @@ repos:
     konflux-sast-tasks:
         enabled: false
     konflux-test:
-        enabled: false
+        enabled: true
     konflux-test-tasks:
-        enabled: false
+        enabled: true
     konflux-ui:
         enabled: true
     kueue-external-admission:
