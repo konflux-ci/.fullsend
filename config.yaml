@@ -296,3 +296,5 @@ repos:
         enabled: false
     zot:
         enabled: false
+    reverse-proxy:
+        enabled: true
