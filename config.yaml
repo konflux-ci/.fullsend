@@ -95,7 +95,7 @@ repos:
     dex:
         enabled: false
     diffused:
-        enabled: false
+        enabled: true
     discussions:
         enabled: false
     docs:
