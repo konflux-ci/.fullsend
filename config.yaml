@@ -259,7 +259,7 @@ repos:
     sample-component-golang-updater:
         enabled: true
     segment-bridge:
-        enabled: false
+        enabled: true
     signing:
         enabled: false
     smee-sidecar:
