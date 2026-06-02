@@ -61,7 +61,7 @@ repos:
     build-pipeline-tasks:
         enabled: false
     build-service:
-        enabled: false
+        enabled: true
     build-tasks-dockerfiles:
         enabled: false
     build-trusted-artifacts:
@@ -125,7 +125,7 @@ repos:
     ko-builder:
         enabled: false
     konflux-build-cli:
-        enabled: false
+        enabled: true
     konflux-casc:
         enabled: false
     konflux-ci:
