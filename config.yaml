@@ -221,7 +221,7 @@ repos:
     refresh-rpm-lockfiles:
         enabled: false
     release-service:
-        enabled: false
+        enabled: true
     release-service-automations:
         enabled: false
     release-service-catalog:
