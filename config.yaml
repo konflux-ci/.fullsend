@@ -161,15 +161,15 @@ repos:
     may:
         enabled: false
     mintmaker:
-        enabled: false
+        enabled: true
     mintmaker-osv-database:
-        enabled: false
+        enabled: true
     mintmaker-presets:
-        enabled: false
+        enabled: true
     mintmaker-renovate-image:
-        enabled: false
+        enabled: true
     mintmaker-schedule-calculator:
-        enabled: false
+        enabled: true
     mobster:
         enabled: true
     multi-arch:
@@ -219,7 +219,7 @@ repos:
     quality-dashboard:
         enabled: false
     refresh-rpm-lockfiles:
-        enabled: false
+        enabled: true
     release-service:
         enabled: true
     release-service-automations:
@@ -239,9 +239,9 @@ repos:
     release-test:
         enabled: false
     renovate-config-validator-action:
-        enabled: false
+        enabled: true
     renovate-log-analyzer:
-        enabled: false
+        enabled: true
     rpm-lockfile-prototype:
         enabled: false
     rpmbuild-pipeline:
