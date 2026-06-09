@@ -57,7 +57,7 @@ repos:
     brand-assets:
         enabled: false
     build-definitions:
-        enabled: false
+        enabled: true
     build-pipeline-tasks:
         enabled: false
     build-service:
