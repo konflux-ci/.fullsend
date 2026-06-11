@@ -183,7 +183,7 @@ repos:
     namespace-generator:
         enabled: false
     namespace-lister:
-        enabled: false
+        enabled: true
     notification-service:
         enabled: true
     oauth2-proxy:
