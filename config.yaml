@@ -177,7 +177,7 @@ repos:
     multi-arch-konflux-example:
         enabled: false
     multi-platform-controller:
-        enabled: false
+        enabled: true
     multi-version-konflux-stage-sample:
         enabled: false
     namespace-generator:
