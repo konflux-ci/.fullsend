@@ -226,7 +226,7 @@ jobs:
 
       - name: Checkout repository
         if: steps.route.outputs.stage != ''
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ job.workflow_repository }}
           token: ${{ steps.oidc-mint.outputs.token }}

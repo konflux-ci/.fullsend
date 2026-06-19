@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout .fullsend
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Extract enrolled repo names from config
         id: repo-list
@@ -33,7 +33,7 @@ jobs:
           echo "names=$REPOS" >> "$GITHUB_OUTPUT"
 
       - name: Checkout upstream scripts
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: fullsend-ai/fullsend
           ref: v0
