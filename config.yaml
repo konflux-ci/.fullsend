@@ -85,13 +85,15 @@ repos:
     coverage-dashboard:
         enabled: false
     coverport:
-        enabled: false
+        enabled: true
     crossplane-components:
         enabled: true
     crossplane-control-plane:
         enabled: true
     deptriage:
         enabled: false
+    devlake:
+        enabled: true
     dex:
         enabled: false
     diffused:
@@ -215,7 +217,7 @@ repos:
     pulp-tool:
         enabled: false
     qe-tools:
-        enabled: false
+        enabled: true
     quality-dashboard:
         enabled: false
     refresh-rpm-lockfiles:
