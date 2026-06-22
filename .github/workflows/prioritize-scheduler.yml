@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout .fullsend repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Mint fullsend token
         id: app-token
