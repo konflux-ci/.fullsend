@@ -123,7 +123,7 @@ repos:
     kait-task:
         enabled: false
     kargo:
-        enabled: false
+        enabled: true
     ko-builder:
         enabled: false
     konflux-build-cli:
@@ -273,7 +273,7 @@ repos:
     task-runner:
         enabled: false
     tekton-integration-catalog:
-        enabled: false
+        enabled: true
     tekton-kueue:
         enabled: false
     tekton-tools:
