@@ -92,7 +92,7 @@ repos:
     image-controller:
         enabled: false
     image-rbac-proxy:
-        enabled: false
+        enabled: true
     integration-examples:
         enabled: false
     integration-service:
