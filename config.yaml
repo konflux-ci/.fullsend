@@ -90,7 +90,7 @@ repos:
     git-clone:
         enabled: false
     image-controller:
-        enabled: false
+        enabled: true
     image-rbac-proxy:
         enabled: true
     integration-examples:
