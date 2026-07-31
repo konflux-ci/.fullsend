@@ -255,8 +255,6 @@ repos:
         enabled: false
     tekton-integration-catalog:
         enabled: true
-    tekton-kueue:
-        enabled: false
     tekton-tools:
         enabled: true
     tektor:
