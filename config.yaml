@@ -39,8 +39,6 @@ repos:
         enabled: false
     build-definitions:
         enabled: true
-    build-pipeline-tasks:
-        enabled: false
     build-service:
         enabled: true
     build-tasks-dockerfiles:
@@ -62,6 +60,8 @@ repos:
     community:
         enabled: false
     community-catalog:
+        enabled: false
+    container-build-catalog:
         enabled: false
     coverage-dashboard:
         enabled: false
