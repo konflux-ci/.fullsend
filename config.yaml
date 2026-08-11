@@ -24,7 +24,7 @@ defaults:
     auto_merge: false
 repos:
     .fullsend:
-        enabled: false
+        enabled: true
     .github:
         enabled: false
     agent-plugins:
