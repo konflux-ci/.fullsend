@@ -135,6 +135,8 @@ repos:
         enabled: true
     konflux-ui:
         enabled: true
+    kube-shard:
+        enabled: true
     kueue-external-admission:
         enabled: false
     llm-compressor-container:
