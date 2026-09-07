@@ -45,6 +45,39 @@ jobs:
     with:
       event_action: ${{ github.event.action }}
 
+  review-denied:
+    if: >-
+      github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && github.event.comment.user.type != 'Bot'
+        && (
+          github.event.comment.body == '/fs-review'
+          || startsWith(github.event.comment.body, '/fs-review ')
+          || startsWith(github.event.comment.body, format('{0}{1}', '/fs-review', fromJSON('"\n"')))
+          || github.event.comment.body == '/fullsend-review'
+          || startsWith(github.event.comment.body, '/fullsend-review ')
+          || startsWith(github.event.comment.body, format('{0}{1}', '/fullsend-review', fromJSON('"\n"')))
+        )
+        && !(
+          github.event.comment.author_association == 'OWNER'
+          || github.event.comment.author_association == 'MEMBER'
+          || github.event.comment.author_association == 'COLLABORATOR'
+        )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Notify unauthorized review request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$REPO" \
+            --body "You do not have permission to run \`/fullsend-review\` or \`/fs-review\`. This command is restricted to integration team members."
+
   stop-fix:
     if: >-
       github.event_name == 'issue_comment'
