@@ -15,10 +15,6 @@ defaults:
         - coder
         - fix
         - review
-        # Retro agent is awesome, but it currently has a bug where it fails to
-        # post a comment back on the PR that triggered it. Let's re-enable
-        # after this is fixed: https://github.com/fullsend-ai/fullsend/issues/1076
-        #- retro
         - prioritize
     max_implementation_retries: 2
     auto_merge: false
@@ -227,6 +223,8 @@ repos:
         enabled: true
     renovate-log-analyzer:
         enabled: true
+    reverse-proxy:
+        enabled: true
     rpm-lockfile-prototype:
         enabled: false
     rpmbuild-pipeline:
@@ -248,7 +246,7 @@ repos:
     signing:
         enabled: false
     smee-sidecar:
-        enabled: true
+        enabled: false
     support:
         enabled: false
     task-repo-shared-ci:
@@ -279,8 +277,6 @@ repos:
         enabled: false
     zot:
         enabled: false
-    reverse-proxy:
-        enabled: true
 allowed_remote_resources:
     - https://raw.githubusercontent.com/fullsend-ai/fullsend/
     - https://raw.githubusercontent.com/fullsend-ai/agents/
