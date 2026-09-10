@@ -246,7 +246,7 @@ repos:
     signing:
         enabled: false
     smee-sidecar:
-        enabled: false
+        enabled: true
     support:
         enabled: false
     task-repo-shared-ci:
