@@ -44,7 +44,7 @@ repos:
     buildah-container:
         enabled: false
     caching:
-        enabled: true
+        enabled: false
     capo:
         enabled: false
     ci-terraform-runner:
