@@ -129,8 +129,6 @@ repos:
         enabled: true
     konflux-test-tasks:
         enabled: true
-    konflux-ui:
-        enabled: true
     kube-shard:
         enabled: true
     kueue-external-admission:
