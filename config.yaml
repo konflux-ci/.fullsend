@@ -19,24 +19,14 @@ defaults:
     max_implementation_retries: 2
     auto_merge: false
 repos:
-    .fullsend:
-        enabled: true
     .github:
         enabled: false
-    agent-plugins:
-        enabled: true
     application-api:
         enabled: false
-    architecture:
-        enabled: true
     bazel-builder:
         enabled: false
     brand-assets:
         enabled: false
-    build-definitions:
-        enabled: true
-    build-service:
-        enabled: true
     build-tasks-dockerfiles:
         enabled: false
     build-trusted-artifacts:
@@ -49,8 +39,6 @@ repos:
         enabled: false
     ci-terraform-runner:
         enabled: false
-    clair-in-ci-db:
-        enabled: true
     cluster-template-charts:
         enabled: false
     community:
@@ -61,20 +49,10 @@ repos:
         enabled: false
     coverage-dashboard:
         enabled: false
-    coverport:
-        enabled: true
-    crossplane-components:
-        enabled: true
-    crossplane-control-plane:
-        enabled: true
     deptriage:
         enabled: false
-    devlake:
-        enabled: true
     dex:
         enabled: false
-    diffused:
-        enabled: true
     discussions:
         enabled: false
     docs:
@@ -85,34 +63,18 @@ repos:
         enabled: false
     git-clone:
         enabled: false
-    image-controller:
-        enabled: true
-    image-rbac-proxy:
-        enabled: true
     integration-examples:
         enabled: false
-    integration-service:
-        enabled: true
     integration-service-utils:
         enabled: false
     internal-services:
         enabled: false
     kait-task:
         enabled: false
-    kargo:
-        enabled: true
     ko-builder:
         enabled: false
-    konflux-build-cli:
-        enabled: true
     konflux-casc:
         enabled: false
-    konflux-ci:
-        enabled: true
-    konflux-ci.github.io:
-        enabled: true
-    konflux-clamav:
-        enabled: true
     konflux-devlake-dashboards:
         enabled: false
     konflux-devlake-mcp:
@@ -125,46 +87,20 @@ repos:
         enabled: false
     konflux-sast-tasks:
         enabled: false
-    konflux-test:
-        enabled: true
-    konflux-test-tasks:
-        enabled: true
-    kube-shard:
-        enabled: true
     kueue-external-admission:
         enabled: false
     llm-compressor-container:
         enabled: false
     loadtest:
         enabled: false
-    may:
-        enabled: true
-    mintmaker:
-        enabled: true
-    mintmaker-osv-database:
-        enabled: true
-    mintmaker-presets:
-        enabled: true
-    mintmaker-renovate-image:
-        enabled: true
-    mintmaker-schedule-calculator:
-        enabled: true
-    mobster:
-        enabled: true
     multi-arch:
         enabled: false
     multi-arch-konflux-example:
         enabled: false
-    multi-platform-controller:
-        enabled: true
     multi-version-konflux-stage-sample:
         enabled: false
     namespace-generator:
         enabled: false
-    namespace-lister:
-        enabled: true
-    notification-service:
-        enabled: true
     oauth2-proxy:
         enabled: false
     olm-operator-konflux-sample:
@@ -173,8 +109,6 @@ repos:
         enabled: false
     operator-toolkit:
         enabled: false
-    oras-container:
-        enabled: true
     paketo-container:
         enabled: false
     perfscale:
@@ -189,18 +123,10 @@ repos:
         enabled: false
     prioritize:
         enabled: false
-    project-controller:
-        enabled: true
     pulp-tool:
         enabled: false
-    qe-tools:
-        enabled: true
     quality-dashboard:
         enabled: false
-    refresh-rpm-lockfiles:
-        enabled: true
-    release-service:
-        enabled: true
     release-service-automations:
         enabled: false
     release-service-catalog:
@@ -217,12 +143,6 @@ repos:
         enabled: false
     release-test:
         enabled: false
-    renovate-config-validator-action:
-        enabled: true
-    renovate-log-analyzer:
-        enabled: true
-    reverse-proxy:
-        enabled: true
     rpm-lockfile-prototype:
         enabled: false
     rpmbuild-pipeline:
@@ -237,36 +157,22 @@ repos:
         enabled: false
     sample-component-golang:
         enabled: false
-    sample-component-golang-updater:
-        enabled: true
-    segment-bridge:
-        enabled: true
     signing:
         enabled: false
-    smee-sidecar:
-        enabled: true
     support:
         enabled: false
     task-repo-shared-ci:
         enabled: false
     task-runner:
         enabled: false
-    tekton-integration-catalog:
-        enabled: true
-    tekton-tools:
-        enabled: true
     tektor:
         enabled: false
     test-data-sast:
         enabled: false
     testrepo:
         enabled: false
-    testrepo-updater:
-        enabled: true
     tests-common-packages:
         enabled: false
-    tools:
-        enabled: true
     workspace-manager:
         enabled: false
     yarn-builder:
