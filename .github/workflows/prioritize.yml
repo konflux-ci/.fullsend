@@ -76,20 +76,20 @@ jobs:
 
       - name: Validate enrollment and extract repo metadata
         id: repo-parts
-        uses: fullsend-ai/fullsend/.github/actions/validate-enrollment@v0
+        uses: fullsend-ai/fullsend/.github/actions/validate-enrollment@v0.43.0
         with:
           source_repo: ${{ inputs.source_repo }}
 
       - name: Mint prioritize token
         id: app-token
-        uses: fullsend-ai/fullsend/.github/actions/mint-token@v0
+        uses: fullsend-ai/fullsend/.github/actions/mint-token@v0.43.0
         with:
           role: prioritize
           repos: ${{ steps.repo-parts.outputs.name }}
           mint_url: ${{ vars.FULLSEND_MINT_URL }}
 
       - name: Setup GCP and prepare credentials
-        uses: fullsend-ai/fullsend/.github/actions/setup-gcp@v0
+        uses: fullsend-ai/fullsend/.github/actions/setup-gcp@v0.43.0
         with:
           gcp_wif_provider: ${{ secrets.FULLSEND_GCP_WIF_PROVIDER }}
           gcp_project_id: ${{ secrets.FULLSEND_GCP_PROJECT_ID }}
