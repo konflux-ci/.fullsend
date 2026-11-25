@@ -44,7 +44,7 @@ repos:
     community:
         enabled: false
     community-catalog:
-        enabled: false
+        enabled: true
     container-build-catalog:
         enabled: false
     coverage-dashboard:
@@ -68,7 +68,7 @@ repos:
     integration-service-utils:
         enabled: false
     internal-services:
-        enabled: false
+        enabled: true
     kait-task:
         enabled: false
     ko-builder:
@@ -108,7 +108,7 @@ repos:
     operator-sdk-builder:
         enabled: false
     operator-toolkit:
-        enabled: false
+        enabled: true
     paketo-container:
         enabled: false
     perfscale:
@@ -130,17 +130,17 @@ repos:
     release-service-automations:
         enabled: false
     release-service-catalog:
-        enabled: false
+        enabled: true
     release-service-catalog-e2e-base:
         enabled: false
     release-service-collectors:
-        enabled: false
+        enabled: true
     release-service-docs:
-        enabled: false
+        enabled: true
     release-service-monitor:
         enabled: false
     release-service-utils:
-        enabled: false
+        enabled: true
     release-test:
         enabled: false
     rpm-lockfile-prototype:
